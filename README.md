@@ -20,7 +20,7 @@ Si il manque des versions -> Etape2
 
 #### Etape 2
 
-Récupérer le package (Microsoft Visual C++ Redistributable Latest Supported Downloads)[https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170]
+Récupérer le package (All VC Redistributable Packages (x86_x64) (32 & 64bits))[https://wampserver.aviatechno.net/files/vcpackages/all_vc_redist_x86_x64.zip]
 
 Installez les installations manquantes, jusqu'à qu'il ne manque plus rien.
 
