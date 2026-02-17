@@ -2,7 +2,7 @@
 
 ## Formation Web Développeur - CF2M Bruxelles
 
-> **Classe** : 2
+> **Classe** : 1
 
 > **Version** : 2026
 
