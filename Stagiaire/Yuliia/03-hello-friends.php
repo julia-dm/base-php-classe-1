@@ -1,3 +1,4 @@
 <?php
-echo nl2br("Hello world\n Hello friends");
-?>
+echo "Hello World";
+echo "<br>Hello friends";
+ 
