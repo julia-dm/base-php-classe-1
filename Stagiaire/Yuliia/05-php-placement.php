@@ -1,5 +1,5 @@
 <?php
-  $date = date("Y-m-d H:i:s");
+  $date =  date("F j, Y, g:i a");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -9,7 +9,7 @@
     <title>Ma page - <?= date("H:i") ?></title>
 </head>
 <body>
-    <h1>Date : <?= date("Y-m-d") ?></h1>
-  <p>Il est <?= date("H:i:s") ?></p>
+    <h1>Date : <?= date("F j, Y") ?></h1>
+  <p>Il est <?= date("g:i a") ?></p>
 </body>
 </html>
