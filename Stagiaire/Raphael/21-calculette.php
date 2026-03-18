@@ -2,7 +2,7 @@
 // $a = 0;
 // $b = 0;
 // $operateur = "";
-$res = "";
+
 function calculSimple($a,$operateur,$b) {
     if ($operateur === "+") {
         return $res = ($a + $b);
@@ -19,6 +19,5 @@ function calculSimple($a,$operateur,$b) {
     }
 }
 
-if (calculSimple(1,"+",6)) {
-    echo " 1 + 2 =  {$res}";
-}
+ echo calculSimple(1,"+",6) ;
+
