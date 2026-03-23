@@ -76,6 +76,21 @@ Il permet aux apprenants de comprendre le flux d'exécution séquentiel, la gest
     - [Les valeurs de retour](#126---les-valeurs-de-retour)
     - [Portée des variables (scope)](#127---portée-des-variables-scope)
 13. [Les chaînes de caractères](#13---les-chaînes-de-caractères)
+14. [Les formulaires - GET et POST](#14---les-formulaires---get-et-post)
+    - [$_GET](#141---_get)
+    - [$_POST](#142---_post)
+    - [Sécuriser les entrées](#143---sécuriser-les-entrées-utilisateur)
+15. [Les fonctions de manipulation de tableaux](#15---les-fonctions-de-manipulation-de-tableaux)
+16. [Les fonctions de date et heure](#16---les-fonctions-de-date-et-heure)
+17. [Gestion des fichiers](#17---gestion-des-fichiers)
+18. [Les sessions et cookies](#18---les-sessions-et-cookies)
+19. [Introduction à PDO (bases de données)](#19---introduction-à-pdo-bases-de-données)
+20. [Gestion des erreurs et exceptions](#20---gestion-des-erreurs-et-exceptions)
+21. [Liste des fonctions à connaître](#21---liste-des-fonctions-à-connaître)
+22. [Exercices récapitulatifs](#22---exercices-récapitulatifs)
+23. [Ressources et liens utiles](#23---ressources-et-liens-utiles)
+
+---
 
 ## 1 - Présentation de PHP
 
@@ -1136,6 +1151,123 @@ for ($i = 0; $i < 20; $i++) {
 
 ---
 
+## 11 - Les inclusions de fichiers
+
+Les expressions `include`, `include_once`, `require` et `require_once` permettent d'**inclure et exécuter** un fichier PHP.
+
+### 11.1 - include et include_once
+
+- `include` : inclut le fichier. Si absent → **warning**, le script continue.
+- `include_once` : idem, mais n'inclut **qu'une seule fois** le même fichier.
+
+```php
+<?php
+include("menu.php");         // Inclut menu.php
+include("menu.php");         // Inclut une 2ème fois menu.php
+
+include_once("footer.php");  // Inclut footer.php
+include_once("footer.php");  // N'inclut PAS une 2ème fois
+```
+
+### 11.2 - require et require_once
+
+- `require` : inclut le fichier. Si absent → **erreur fatale**, le script STOPPE.
+- `require_once` : idem, mais n'inclut **qu'une seule fois** le même fichier.
+
+```php
+<?php
+require("config.php");       // Si absent, le script s'arrête
+require_once("functions.php"); // Inclus une seule fois
+```
+
+> 💡 **Bonne pratique** : utilisez `require_once` pour les fichiers critiques (config, fonctions), `include` pour les templates optionnels.
+
+📖 [Documentation : include](https://www.php.net/manual/fr/function.include.php) | [require](https://www.php.net/manual/fr/function.require.php)
+
+---
+
+### 11.3 - Le contrôleur frontal (Front Controller)
+
+Le contrôleur frontal centralise **toutes les requêtes** vers un seul fichier `index.php` qui redirige vers les bons templates.
+
+**Architecture de fichiers :**
+
+```
+projet/
+├── index.php           → redirige vers public/
+├── public/
+│   ├── index.php       → CONTRÔLEUR FRONTAL
+│   ├── css/style.css
+│   ├── js/script.js
+│   └── img/
+├── templates/
+│   ├── inc/
+│   │   ├── menu.php
+│   │   └── footer.php
+│   ├── accueil.php
+│   ├── contact.php
+│   ├── actualites.php
+│   └── page-404.php
+```
+
+**index.php (racine) :**
+```php
+<?php
+header("Location: public");
+exit;
+```
+
+**public/index.php (contrôleur frontal) :**
+```php
+<?php
+if (isset($_GET['section'])) {
+    switch ($_GET['section']) {
+        case 'contact':
+            include('../templates/contact.php');
+            break;
+        case 'actualites':
+            include('../templates/actualites.php');
+            break;
+        case 'rgpd':
+            include('../templates/mentions-legales.php');
+            break;
+        default:
+            include('../templates/page-404.php');
+    }
+} else {
+    include('../templates/accueil.php');
+}
+```
+
+**templates/accueil.php :**
+```php
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Accueil</title>
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <?php include 'inc/menu.php'; ?>
+    <h1>Bienvenue</h1>
+    <p>Page d'accueil</p>
+    <?php include 'inc/footer.php'; ?>
+</body>
+</html>
+```
+
+> ⚠️ Les chemins CSS/JS/images partent du **contrôleur frontal** (dossier `public/`).
+
+#### ✏️ Exercice 19
+> Créez un dossier `19-front-controller/` avec l'architecture ci-dessus. Créez un site de 4 pages (accueil, actualités, contact, mentions légales) avec un menu de navigation par `$_GET` et une page 404.
+
+---
+
+[Retour à la table des matières](#table-des-matières)
+
+---
+
 ## 12 - Les fonctions
 
 Une fonction est un **bloc de code réutilisable** qui peut prendre des paramètres et renvoyer une valeur.
@@ -1329,3 +1461,525 @@ echo htmlspecialchars($html); // &lt;script&gt;alert('XSS')&lt;/script&gt;
 [Retour à la table des matières](#table-des-matières)
 
 ---
+
+## 14 - Les formulaires - GET et POST
+
+### 14.1 - $_GET
+
+Les données sont passées **dans l'URL** (visibles).
+
+```html
+<form action="traitement.php" method="GET">
+    <label for="nom">Nom :</label>
+    <input type="text" id="nom" name="nom">
+    <button type="submit">Envoyer</button>
+</form>
+```
+
+```php
+<?php
+// traitement.php
+if (isset($_GET['nom'])) {
+    echo "Bonjour " . htmlspecialchars($_GET['nom']);
+}
+```
+
+### 14.2 - $_POST
+
+Les données sont envoyées **dans le corps de la requête** (invisibles dans l'URL).
+
+```html
+<form action="traitement.php" method="POST">
+    <label for="email">Email :</label>
+    <input type="email" id="email" name="email">
+    <label for="message">Message :</label>
+    <textarea id="message" name="message"></textarea>
+    <button type="submit">Envoyer</button>
+</form>
+```
+
+```php
+<?php
+// traitement.php
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = htmlspecialchars($_POST['email'] ?? '');
+    $message = htmlspecialchars($_POST['message'] ?? '');
+    echo "Email : $email<br>Message : $message";
+}
+```
+
+### 14.3 - Sécuriser les entrées utilisateur
+
+> ⚠️ **JAMAIS** faire confiance aux données utilisateur !
+
+```php
+<?php
+// Toujours vérifier et nettoyer les entrées
+$nom = isset($_POST['nom']) ? htmlspecialchars(trim($_POST['nom'])) : '';
+
+// Vérifier qu'un champ n'est pas vide
+if (empty($nom)) {
+    echo "Le nom est obligatoire";
+}
+
+// Valider un email
+$email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
+if ($email === false) {
+    echo "Email invalide";
+}
+```
+
+📖 [Documentation : filter_input()](https://www.php.net/manual/fr/function.filter-input.php)
+
+#### ✏️ Exercice 24
+> Créez `24-formulaire.php` : un formulaire de contact (nom, email, message) en POST. Vérifiez que tous les champs sont remplis et affichez un message de confirmation ou d'erreur.
+
+#### ✏️ Exercice 25
+> Créez `25-calculatrice.php` : un formulaire avec deux champs numériques et un select pour l'opération (+, -, *, /). Traitez le calcul en PHP et affichez le résultat.
+
+---
+
+[Retour à la table des matières](#table-des-matières)
+
+---
+
+## 15 - Les fonctions de manipulation de tableaux
+
+```php
+<?php
+$fruits = ["pomme", "poire", "banane"];
+
+// Ajouter
+array_push($fruits, "kiwi");     // Ajoute à la fin
+array_unshift($fruits, "cerise");// Ajoute au début
+$fruits[] = "mangue";            // Ajoute à la fin (raccourci)
+
+// Retirer
+$dernier = array_pop($fruits);   // Retire le dernier
+$premier = array_shift($fruits); // Retire le premier
+
+// Rechercher
+in_array("poire", $fruits);       // true
+$cle = array_search("banane", $fruits); // retourne la clé
+
+// Trier
+sort($fruits);       // Tri croissant (réindexe)
+rsort($fruits);      // Tri décroissant
+asort($fruits);      // Tri croissant (conserve les clés)
+ksort($fruits);      // Tri par clé croissante
+
+// Fusionner
+$legumes = ["carotte", "tomate"];
+$alimentation = array_merge($fruits, $legumes);
+
+// Clés et valeurs
+$cles = array_keys($alimentation);
+$valeurs = array_values($alimentation);
+
+// Filtrer et transformer
+$nombres = [1, 2, 3, 4, 5, 6];
+$pairs = array_filter($nombres, fn($n) => $n % 2 === 0);     // [2, 4, 6]
+$doubles = array_map(fn($n) => $n * 2, $nombres);             // [2, 4, 6, 8, 10, 12]
+```
+
+📖 [Documentation : Fonctions de tableaux](https://www.php.net/manual/fr/ref.array.php)
+
+#### ✏️ Exercice 26
+> Créez `26-tableaux-avances.php` : créez un tableau de 10 nombres aléatoires. Triez-le, retirez les doublons, puis affichez le résultat dans un tableau HTML.
+
+---
+
+[Retour à la table des matières](#table-des-matières)
+
+---
+
+## 16 - Les fonctions de date et heure
+
+```php
+<?php
+// Date actuelle
+echo date("Y-m-d");       // 2025-12-15
+echo date("d/m/Y");       // 15/12/2025
+echo date("H:i:s");       // 14:30:45
+echo date("Y-m-d H:i:s"); // Format datetime MySQL
+
+// Timestamp (secondes depuis 01/01/1970)
+echo time(); // 1734267045
+
+// Créer une date
+echo date("d/m/Y", mktime(0, 0, 0, 12, 25, 2025)); // 25/12/2025
+
+// Parser une date en texte
+echo date("d/m/Y", strtotime("next monday")); // prochain lundi
+echo date("d/m/Y", strtotime("+1 month"));    // dans 1 mois
+echo date("d/m/Y", strtotime("2025-01-01"));  // 01/01/2025
+
+// Formatage jour de la semaine en français
+setlocale(LC_TIME, 'fr_FR.UTF-8');
+```
+
+**Formats courants :**
+
+| Caractère | Description | Exemple |
+|-----------|-------------|---------|
+| `Y` | Année (4 chiffres) | 2025 |
+| `y` | Année (2 chiffres) | 25 |
+| `m` | Mois (01-12) | 03 |
+| `d` | Jour (01-31) | 15 |
+| `H` | Heure 24h (00-23) | 14 |
+| `i` | Minutes (00-59) | 30 |
+| `s` | Secondes (00-59) | 45 |
+| `l` | Jour de la semaine | Monday |
+| `N` | Jour ISO (1=lundi, 7=dimanche) | 3 |
+
+📖 [Documentation : date()](https://www.php.net/manual/fr/function.date.php) | [Formats](https://www.php.net/manual/fr/datetime.format.php)
+
+#### ✏️ Exercice 27
+> Créez `27-dates.php` : affichez la date du jour en français (ex: "Nous sommes le vendredi 15 décembre 2025, il est 14h30"), puis calculez et affichez le nombre de jours restants avant le 31 décembre.
+
+---
+
+[Retour à la table des matières](#table-des-matières)
+
+---
+
+## 17 - Gestion des fichiers
+
+```php
+<?php
+// Lire un fichier entier
+$contenu = file_get_contents("mon-fichier.txt");
+
+// Écrire dans un fichier (écrase le contenu)
+file_put_contents("mon-fichier.txt", "Nouveau contenu");
+
+// Ajouter au fichier
+file_put_contents("mon-fichier.txt", "\nLigne ajoutée", FILE_APPEND);
+
+// Vérifier l'existence
+if (file_exists("mon-fichier.txt")) {
+    echo "Le fichier existe";
+}
+
+// Lire ligne par ligne
+$lignes = file("mon-fichier.txt"); // Tableau de lignes
+foreach ($lignes as $numero => $ligne) {
+    echo "Ligne $numero : $ligne<br>";
+}
+
+// Lire/écrire du JSON
+$data = ["nom" => "Dupont", "age" => 30];
+file_put_contents("data.json", json_encode($data, JSON_PRETTY_PRINT));
+
+$json = file_get_contents("data.json");
+$decoded = json_decode($json, true); // true pour tableau associatif
+```
+
+📖 [Documentation : Fonctions de fichiers](https://www.php.net/manual/fr/ref.filesystem.php)
+
+#### ✏️ Exercice 28
+> Créez `28-fichiers.php` : créez un mini livre d'or. Un formulaire permet d'ajouter un message (nom + message). Les messages sont stockés dans un fichier JSON et affichés sur la page.
+
+---
+
+[Retour à la table des matières](#table-des-matières)
+
+---
+
+## 18 - Les sessions et cookies
+
+### 18.1 - Les sessions
+
+Les sessions permettent de stocker des données **côté serveur** pour un utilisateur, entre les pages.
+
+```php
+<?php
+// TOUJOURS en première ligne, AVANT tout HTML
+session_start();
+
+// Stocker des données
+$_SESSION['nom'] = "Dupont";
+$_SESSION['connecte'] = true;
+
+// Lire des données (sur une autre page)
+session_start();
+echo $_SESSION['nom']; // Dupont
+
+// Supprimer une variable de session
+unset($_SESSION['nom']);
+
+// Détruire toute la session
+session_destroy();
+```
+
+### 18.2 - Les cookies
+
+Les cookies stockent des données **côté client** (navigateur).
+
+```php
+<?php
+// Créer un cookie (expire dans 30 jours)
+setcookie("theme", "dark", time() + (86400 * 30), "/");
+
+// Lire un cookie
+if (isset($_COOKIE['theme'])) {
+    echo $_COOKIE['theme']; // dark
+}
+
+// Supprimer un cookie (expiration dans le passé)
+setcookie("theme", "", time() - 3600, "/");
+```
+
+> ⚠️ `setcookie()` doit être appelé **AVANT** tout `echo` ou HTML.
+
+📖 [Documentation : Sessions](https://www.php.net/manual/fr/book.session.php) | [Cookies](https://www.php.net/manual/fr/function.setcookie.php)
+
+#### ✏️ Exercice 29
+> Créez `29-session.php` : un formulaire de connexion simple (nom d'utilisateur stocké en session). Affichez "Bienvenue, NOM" si connecté, ou le formulaire sinon. Ajoutez un bouton de déconnexion.
+
+---
+
+[Retour à la table des matières](#table-des-matières)
+
+---
+
+## 19 - Introduction à PDO (bases de données)
+
+**PDO** (PHP Data Objects) est une interface d'accès aux bases de données, utilisant la **programmation orientée objet** même dans un contexte procédural.
+
+### 19.1 - Connexion à la base de données
+
+```php
+<?php
+try {
+    $pdo = new PDO(
+        'mysql:host=localhost;dbname=ma_base;charset=utf8mb4',
+        'root',       // utilisateur
+        '',            // mot de passe
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]
+    );
+    echo "Connexion réussie !";
+} catch (PDOException $e) {
+    die("Erreur de connexion : " . $e->getMessage());
+}
+```
+
+### 19.2 - Requêtes simples (SELECT)
+
+```php
+<?php
+// SELECT simple
+$stmt = $pdo->query("SELECT * FROM utilisateurs");
+$utilisateurs = $stmt->fetchAll();
+
+foreach ($utilisateurs as $user) {
+    echo $user['nom'] . " - " . $user['email'] . "<br>";
+}
+```
+
+### 19.3 - Requêtes préparées (SÉCURITÉ !)
+
+> ⚠️ **TOUJOURS** utiliser les requêtes préparées pour les données utilisateur afin d'éviter les **injections SQL**.
+
+```php
+<?php
+// SELECT avec paramètre
+$stmt = $pdo->prepare("SELECT * FROM utilisateurs WHERE id = :id");
+$stmt->execute(['id' => 5]);
+$user = $stmt->fetch();
+
+// INSERT
+$stmt = $pdo->prepare("INSERT INTO utilisateurs (nom, email) VALUES (:nom, :email)");
+$stmt->execute([
+    'nom' => htmlspecialchars($_POST['nom']),
+    'email' => filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL),
+]);
+
+// UPDATE
+$stmt = $pdo->prepare("UPDATE utilisateurs SET nom = :nom WHERE id = :id");
+$stmt->execute(['nom' => 'Nouveau nom', 'id' => 5]);
+
+// DELETE
+$stmt = $pdo->prepare("DELETE FROM utilisateurs WHERE id = :id");
+$stmt->execute(['id' => 5]);
+```
+
+📖 [Documentation : PDO](https://www.php.net/manual/fr/book.pdo.php) | [Requêtes préparées](https://www.php.net/manual/fr/pdo.prepared-statements.php)
+
+#### ✏️ Exercice 30
+> Créez une base de données `exercice_php` avec une table `messages` (id, auteur, contenu, date_creation). Créez `30-pdo.php` : un formulaire pour ajouter des messages et une page qui les affiche tous, triés par date.
+
+---
+
+[Retour à la table des matières](#table-des-matières)
+
+---
+
+## 20 - Gestion des erreurs et exceptions
+
+### 20.1 - Les niveaux d'erreur
+
+```php
+<?php
+// Afficher toutes les erreurs (en développement)
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Cacher les erreurs (en production)
+error_reporting(0);
+ini_set('display_errors', 0);
+```
+
+### 20.2 - try / catch (exceptions)
+
+```php
+<?php
+try {
+    // Code qui peut échouer
+    $resultat = 10 / 0;
+} catch (DivisionByZeroError $e) {
+    echo "Erreur : " . $e->getMessage();
+} catch (Exception $e) {
+    echo "Erreur générale : " . $e->getMessage();
+} finally {
+    echo "Ce code s'exécute toujours";
+}
+```
+
+### 20.3 - Lancer une exception
+
+```php
+<?php
+function diviser($a, $b) {
+    if ($b == 0) {
+        throw new Exception("Division par zéro impossible !");
+    }
+    return $a / $b;
+}
+
+try {
+    echo diviser(10, 0);
+} catch (Exception $e) {
+    echo "Erreur : " . $e->getMessage();
+}
+```
+
+📖 [Documentation : Exceptions](https://www.php.net/manual/fr/language.exceptions.php)
+
+---
+
+[Retour à la table des matières](#table-des-matières)
+
+---
+
+## 21 - Liste des fonctions à connaître
+
+Ces fonctions sont **à connaître par cœur** pour la certification :
+
+### Affichage et débogage
+`echo` · `print` · `var_dump()` · `print_r()` · `phpinfo()`
+
+### Vérification de variables
+`isset()` · `empty()` · `unset()` · `gettype()` · `settype()` · `is_string()` · `is_int()` · `is_float()` · `is_bool()` · `is_array()` · `is_null()` · `is_numeric()`
+
+### Chaînes de caractères
+`strlen()` · `strtolower()` · `strtoupper()` · `ucfirst()` · `lcfirst()` · `trim()` · `ltrim()` · `rtrim()` · `substr()` · `str_replace()` · `strpos()` · `explode()` · `implode()` · `nl2br()` · `htmlspecialchars()` · `htmlentities()` · `strip_tags()` · `str_contains()` · `str_starts_with()` · `str_ends_with()` · `sprintf()` · `number_format()` · `str_pad()` · `str_repeat()` · `str_word_count()` · `md5()` · `sha1()` · `password_hash()` · `password_verify()`
+
+### Tableaux
+`count()` · `array_push()` · `array_pop()` · `array_shift()` · `array_unshift()` · `array_merge()` · `array_keys()` · `array_values()` · `in_array()` · `array_search()` · `sort()` · `rsort()` · `asort()` · `arsort()` · `ksort()` · `krsort()` · `array_reverse()` · `array_unique()` · `array_slice()` · `array_splice()` · `array_map()` · `array_filter()` · `array_combine()` · `array_chunk()` · `array_key_exists()` · `compact()` · `extract()`
+
+### Mathématiques
+`mt_rand()` · `rand()` · `round()` · `ceil()` · `floor()` · `abs()` · `max()` · `min()` · `pow()` · `sqrt()` · `intval()` · `floatval()`
+
+### Date et heure
+`date()` · `time()` · `mktime()` · `strtotime()` · `checkdate()`
+
+### Fichiers
+`file_get_contents()` · `file_put_contents()` · `file_exists()` · `is_file()` · `is_dir()` · `fopen()` · `fclose()` · `fwrite()` · `fread()` · `fgets()`
+
+### JSON
+`json_encode()` · `json_decode()` · `json_validate()` (PHP 8.3)
+
+### Divers
+`header()` · `exit` / `die` · `sleep()` · `filter_input()` · `filter_var()`
+
+---
+
+[Retour à la table des matières](#table-des-matières)
+
+---
+
+## 22 - Exercices récapitulatifs
+
+### ✏️ Exercice R1 - Générateur de table de multiplication
+> Créez une page qui affiche les tables de multiplication de 1 à 10 dans un tableau HTML `<table>`. Chaque cellule affiche le résultat.
+
+### ✏️ Exercice R2 - Pierre-Feuille-Ciseaux
+> Créez un jeu de Pierre-Feuille-Ciseaux. L'ordinateur choisit au hasard, le joueur choisit via un formulaire GET. Affichez le résultat avec un compteur de score stocké en `$_GET` ou en session.
+
+### ✏️ Exercice R3 - Mini blog avec fichiers JSON
+> Créez un mini blog avec : un formulaire pour ajouter un article (titre, contenu, auteur, date auto), stockage dans un fichier JSON, affichage de tous les articles triés par date, suppression d'un article.
+
+### ✏️ Exercice R4 - Gestionnaire de contacts (PDO)
+> Créez un CRUD complet (Create, Read, Update, Delete) pour une table `contacts` en base de données avec PDO. Champs : id, nom, prenom, email, telephone, date_creation.
+
+### ✏️ Exercice R5 - Site complet avec contrôleur frontal
+> Créez un site de 5 pages avec contrôleur frontal, sessions (connexion/déconnexion), formulaire de contact (POST), page d'actualités (données depuis un fichier JSON), et gestion d'une page 404.
+
+---
+
+[Retour à la table des matières](#table-des-matières)
+
+---
+
+## 23 - Ressources et liens utiles
+
+### Documentation officielle
+- 📖 [PHP.net - Manuel en français](https://www.php.net/manual/fr/)
+- 📖 [Référence des fonctions](https://www.php.net/manual/fr/funcref.php)
+- 📖 [Types de données](https://www.php.net/manual/fr/language.types.php)
+- 📖 [Variables](https://www.php.net/manual/fr/language.variables.php)
+- 📖 [Structures de contrôle](https://www.php.net/manual/fr/language.control-structures.php)
+- 📖 [Fonctions](https://www.php.net/manual/fr/language.functions.php)
+- 📖 [PDO](https://www.php.net/manual/fr/book.pdo.php)
+
+### Cours CF2M (anciens)
+- 🎓 [PHP-base 2025](https://github.com/WebDevCF2m2025/PHP-base)
+- 🎓 [PHP-base 2023-2024](https://github.com/WebDevCF2m2023/PHP-base)
+- 🎓 [Bases PHP 2022](https://github.com/WebDevCF2m2022/bases-php-2022)
+- 🎓 [PHP Initiation 2021](https://github.com/WebDevCF2m2021/PHP-Initiation-programmation)
+
+### Algorithmique
+- 🧮 [France IOI - Exercices d'algorithmique](http://www.france-ioi.org/)
+- 🧮 [OpenClassrooms - Algorithmique](https://openclassrooms.com/fr/courses/7527306-decouvrez-le-fonctionnement-des-algorithmes)
+- 🧮 [Apprendre l'algorithmique - Zeste de Savoir](https://zestedesavoir.com/tutoriels/531/les-bases-de-lalgorithmique/)
+
+### Cours externes
+- 📚 [Pierre Giraud - Cours PHP complet](https://www.pierre-giraud.com/php-mysql-apprendre-coder-cours/)
+- 📚 [Grafikart - Tutoriels PHP](https://grafikart.fr/formations/php)
+- 📚 [OpenClassrooms - PHP/MySQL](https://openclassrooms.com/fr/courses/918836-concevez-votre-site-web-avec-php-et-mysql)
+- 📚 [W3Schools PHP (EN)](https://www.w3schools.com/php/)
+- 📚 [PHP The Right Way (EN)](https://phptherightway.com/)
+
+### Outils
+- 🛠️ [WAMP Server](https://www.wampserver.com/)
+- 🛠️ [XAMPP](https://www.apachefriends.org/fr/index.html)
+- 🛠️ [Visual Studio Code](https://code.visualstudio.com/)
+- 🛠️ [PhpStorm](https://www.jetbrains.com/phpstorm/)
+- 🛠️ [phpMyAdmin](https://www.phpmyadmin.net/)
+
+### Sécurité
+- 🔒 [OWASP PHP Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/PHP_Configuration_Cheat_Sheet.html)
+- 🔒 [PHP Security Best Practices](https://www.php.net/manual/fr/security.php)
+
+---
+
+[Retour à la table des matières](#table-des-matières)
+
+---
+
+> **Licence** : Ce cours est libre de distribution pour un usage pédagogique.
+> **CF2M** - Centre de Formation 2 Mille - Bruxelles
