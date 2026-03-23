@@ -45,3 +45,11 @@ Mettez-y des '.gitkeep' dans chaque dossier et faites des commits.
 # 'Stagiaire/Meidhy/MVC-19/.gitignore'
 
 '''
+
+Créez le fichier 'config.php' à la racine du projet, il es protégé grâce au '.gitconfig'
+
+### Phase 3
+
+#### Création du controlleur frontal
+
+Le front controlleur, nommé 'MVC-19\public\index.php' est le seul fichier 'php' qui sera accessiblé à un utilisateur externe. 
