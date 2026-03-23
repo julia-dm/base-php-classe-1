@@ -45,4 +45,20 @@ Mettez-y des `.gitkeep` dans chaque dossier et faîtes des commit.
 
 ```bash
 # Stagiaire/Robin/mvc-19/.gitignore
+
+# On protège nos variables et constantes dangereuses
+# du fichier config.php
+config.php
+
+# __DIR__ constante magique qui donnera
+# le chemin absolu vers la racine du projet
+const ROOT_PATH = __DIR__;
 ```
+
+Créez le fichier `config.php` à la racine du projet. Il est protégé grâce au `.gitconfig`.
+
+### Phase 3
+
+#### Création du contrôlleur frontal
+
+Le front controller, nommé `public/index.php`, est le seul fichier `php` qui sera accessible à un utilisateur externe
