@@ -1,5 +1,5 @@
         <nav>
-            <a href="index.html" class="logo">DevPortfolio</a>
+            <a href="./" class="logo">DevPortfolio</a>
             <button class="menu-toggle">☰</button>
             <ul class="nav-links">
                 <li><a href="./" class="active">Accueil</a></li>
